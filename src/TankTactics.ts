@@ -111,7 +111,7 @@ export class TankTacticsGame implements Game {
 			const disX = Math.abs(x - player.coords.x)
 			const disY = Math.abs(y - player.coords.y)
 
-			newPlayer.distance = Math.sqrt(disX * disX + disY * disY)
+			newPlayer.distance = Math.max(disX, disY)
 			
 			return newPlayer
 		}).sort((a, b) => a.distance - b.distance)
@@ -223,9 +223,9 @@ export class TankTacticsGame implements Game {
 
 		const disX = Math.abs(attacker.coords.x - victim.coords.x)
 		const disY = Math.abs(attacker.coords.y - victim.coords.y)
-		const dis = Math.sqrt(disX*disX + disY*disY)
+		const dis = Math.max(disX, disY)
 		
-		if(Math.floor(dis) < attacker.range) {
+		if(Math.floor(dis) <= attacker.range) {
 			this.takePlayerPoints(attacker.id)
 			victim.health--
 
@@ -236,6 +236,28 @@ export class TankTacticsGame implements Game {
 		} else {
 			return "Die is veeeeeeeeel te ver weg"
 		}
+
+		return "ok"
+	}
+
+	doRangeIncrease(playerId: number) {
+
+		const player = this.players.find(p => p.id === playerId)
+
+		if(!player) {
+			return "Ja die bestaat niet he"
+		} 
+
+		if(player.health <= 0) {
+			return "lol je bent al dood"
+		}
+
+		if(player.points <= 0) {
+			return "bruh daar heb je de punten niet voor hoor"
+		}
+
+		this.takePlayerPoints(player.id)
+		player.range++
 
 		return "ok"
 	}

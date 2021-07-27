@@ -92,7 +92,7 @@ client.on("ready", async () => {
 				);
 				const stepCount = Number(interaction.data.options.find(
 					(v) => v.name === "step_count"
-				)?.value || "0")
+				)?.value || "1")
 				const desiredDirection = directionObj.value;
 
 				const walkRes = game.walkPlayer(player.id, desiredDirection, stepCount);
@@ -143,8 +143,25 @@ client.on("ready", async () => {
 				break;
 			}
 			case "pos": {
-				if(player.health <= 0) reply(`Je positie? Broer je bent dood 😂`)
+				if(player.health <= 0) {
+					reply(`Je positie? Broer je bent dood 😂`)
+					return
+				}
 				reply(`Your position: X ${player.coords.x}, Y ${player.coords.y}`)
+				break
+			}
+			case "range": {
+				const rangeRes = game.doRangeIncrease(player.id)
+
+				if(rangeRes !== "ok") {
+					sendToDiscord(game);
+					reply(rangeRes)
+					return
+				}
+
+				sendToDiscord(game)
+				reply("Goed bezig broer")
+				break
 			}
 			default: {
 				reply(`Da command ken ik niet man... ${slashCommandName}???`)
@@ -165,6 +182,13 @@ async function installCommands() {
 		data: {
 			name: "pos",
 			description: "Get your in-game coordinates",
+		},
+	});
+
+	await getApp("869534069527027734").commands.post({
+		data: {
+			name: "range",
+			description: "Trade 1 AP for a range increase",
 		},
 	});
 

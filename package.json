@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "yarn build && node ./dist/index.js",
+    "start-alt": "ts-node src/",
     "build": "etsc"
   },
   "keywords": [],
