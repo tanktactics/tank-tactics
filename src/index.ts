@@ -430,7 +430,7 @@ async function sendToDiscord(game: TankTacticsGame) {
 				longestName.length + 2,
 				" "
 			)} ${`${p.points} AP`.padEnd(5, " ")} ${`${p.health} lives`.padEnd(
-				7,
+				10,
 				" "
 			)} ${p.range} range`.trim();
 		})
