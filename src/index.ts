@@ -11,6 +11,10 @@ const client = new Discord.Client({
 	partials: ["MESSAGE", "REACTION"],
 });
 
+process.on('uncaughtException', (err) => {
+	console.log('Caught exception', err);
+});
+
 const getApp = (guildId) => {
 	// @ts-ignore
 	const app = client.api.applications(client.user.id);
