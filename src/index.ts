@@ -25,11 +25,9 @@ const games: TankTacticsGame[] = db
 	.get("games")
 	.map((g) => new TankTacticsGame(g));
 
-client.on("ready", async () => {
-	console.log(`Logged in as ${client.user.tag}!`);
-
+function doGameListeners() {
 	for(let game of games) {
-		game.on("points-given", async () => {
+		if(game.eventListeners.length === 0) game.on("points-given", async () => {
 			const guild = await client.guilds.fetch("869534069527027734");
 			// @ts-ignore
 			const channels = [...guild.channels.cache.toJSON()];
@@ -41,6 +39,12 @@ client.on("ready", async () => {
 			sendToDiscord(game)
 		});
 	}
+}
+
+client.on("ready", async () => {
+	console.log(`Logged in as ${client.user.tag}!`);
+
+	doGameListeners()
 
 	await installCommands();
 
@@ -295,6 +299,8 @@ client.on("message", async (msg) => {
 		games.push(game);
 
 		db.set("games", games);
+
+		doGameListeners()
 
 		msg.reply("okie dokie");
 		sendToDiscord(game);
