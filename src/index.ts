@@ -56,15 +56,19 @@ client.on("ready", async () => {
 		const game = games.find((g) => g.name === channel.name);
 
 		const reply = (content) => {
-			// @ts-ignore
-			client.api.interactions(interaction.id, interaction.token).callback.post({
-				data: {
-					type: 4,
+			try {
+				// @ts-ignore
+				client.api.interactions(interaction.id, interaction.token).callback.post({
 					data: {
-						content,
+						type: 4,
+						data: {
+							content,
+						},
 					},
-				},
-			});
+				});
+			} catch(err) {
+				// Oh well
+			}
 		};
 
 		if (!game) {
