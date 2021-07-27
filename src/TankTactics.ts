@@ -137,7 +137,7 @@ export class TankTacticsGame implements Game {
 		return "not_found";
 	}
 
-	walkPlayer(id: number, dir: "up" | "up_left" | "up_right" | "left" | "right" | "down" | "down_right" | "down_left") {
+	walkPlayer(id: number, dir: "up" | "up_left" | "up_right" | "left" | "right" | "down" | "down_right" | "down_left", stepCount: number = 1) {
 		const p = this.players.find(p => p.id === id)
 		if(!p) {
 			return "not_found"
@@ -146,53 +146,58 @@ export class TankTacticsGame implements Game {
 		if(p.health <= 0) {
 			return "Je bent al dood man"
 		}
+		console.log(stepCount)
+		while(stepCount > 0) {
+			console.log(stepCount)
+			stepCount--
+			if(p.points > 0) {
 
-		if(p.points > 0) {
-
-			let newX = p.coords.x;
-			let newY = p.coords.y;
-
-			if(dir === "up") {
-				newY--
-			} else if(dir === "up_left") {
-				newX--
-				newY--
-			} else if(dir === "up_right") {
-				newX++
-				newY--
-			} else if(dir === "left") {
-				newX--
-			} else if(dir === "right") {
-				newX++
-			} else if(dir === "down") {
-				newY++
-			} else if(dir === "down_left") {
-				newX--
-				newY++
-			} else if(dir === "down_right") {
-				newX++
-				newY++
-			}
-			
-			let newPosIsValid = true;
-			if(newX < 0 || newY < 0 || newX > this.boardWidth - 1 || newY > this.boardHeight - 1) newPosIsValid = false;
-
-			for(let player of this.players) {
-				if(player.coords.x === newX && player.coords.y === newY) {
-					newPosIsValid = false;
-				}
-			}
-
-			if(!newPosIsValid) return "Die kant gaan we ff niet op jong"
-			
-			p.coords.x = newX;
-			p.coords.y = newY;
+				let newX = p.coords.x;
+				let newY = p.coords.y;
 	
-			this.takePlayerPoints(id, 1)
-			return "ok"
-		} else {
-			return "Zonder punten? Dat zit er niet in man..."
+				if(dir === "up") {
+					newY--
+				} else if(dir === "up_left") {
+					newX--
+					newY--
+				} else if(dir === "up_right") {
+					newX++
+					newY--
+				} else if(dir === "left") {
+					newX--
+				} else if(dir === "right") {
+					newX++
+				} else if(dir === "down") {
+					newY++
+				} else if(dir === "down_left") {
+					newX--
+					newY++
+				} else if(dir === "down_right") {
+					newX++
+					newY++
+				}
+				
+				let newPosIsValid = true;
+				if(newX < 0 || newY < 0 || newX > this.boardWidth - 1 || newY > this.boardHeight - 1) newPosIsValid = false;
+	
+				for(let player of this.players.filter(p => p.health > 0)) {
+					if(player.coords.x === newX && player.coords.y === newY) {
+						newPosIsValid = false;
+					}
+				}
+	
+				if(!newPosIsValid) return "Verder kan je niet jong"
+				
+				p.coords.x = newX;
+				p.coords.y = newY;
+		
+				this.takePlayerPoints(id, 1)
+			} else {
+				return "Nu heb je geen punten meer"
+			}
 		}
+		return "ok"
+
 	}
 
 	doAttack(attackerId: number, victimId: number) {

@@ -86,15 +86,20 @@ client.on("ready", async () => {
 				break;
 			}
 			case "walk": {
+				console.log(interaction.data.options)
 				const directionObj = interaction.data.options.find(
 					(v) => v.name === "direction"
 				);
+				const stepCount = Number(interaction.data.options.find(
+					(v) => v.name === "step_count"
+				)?.value || "0")
 				const desiredDirection = directionObj.value;
 
-				const walkRes = game.walkPlayer(player.id, desiredDirection);
+				const walkRes = game.walkPlayer(player.id, desiredDirection, stepCount);
 
 				if (walkRes !== "ok") {
 					reply(walkRes);
+					sendToDiscord(game);
 					return;
 				}
 
@@ -208,6 +213,13 @@ async function installCommands() {
 						},
 					],
 				},
+				{
+					name: "step_count",
+					description: "The amount of times to repeat this action",
+					type: 3,
+					required: false,
+					choices: Array(20).fill(0).map((v,i)=>({name:(i+1).toString(),value:(i+1).toString()}))
+				}
 			],
 		},
 	});
