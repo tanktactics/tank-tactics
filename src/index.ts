@@ -400,9 +400,9 @@ async function sendToDiscord(game: TankTacticsGame) {
 	await channel.send(`
 	\`\`\`${game.players.sort((a, b) => b.points - a.points).sort((a, b) => b.health - a.health)
 		.map((p) => {
-			return `${p.name.padEnd(longestName.length + 2, " ")} ${`${p.points} AP`.padEnd(10, ' ')} ${
+			return `${p.name.padEnd(longestName.length + 2, " ")} ${`${p.points} AP`.padEnd(5, ' ')} ${
 				p.health
-			} HP`;
+			} lives`;
 		})
 		.join("\n")}\`\`\`
 	`,
