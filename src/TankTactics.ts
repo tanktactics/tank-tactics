@@ -254,11 +254,11 @@ export class TankTacticsGame implements Game {
 			return "lol je bent al dood"
 		}
 
-		if(player.points <= 0) {
+		if(player.points <= 1) {
 			return "bruh daar heb je de punten niet voor hoor"
 		}
 
-		this.takePlayerPoints(player.id)
+		this.takePlayerPoints(player.id, 2)
 		player.range++
 
 		return "ok"

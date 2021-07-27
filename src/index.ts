@@ -196,7 +196,7 @@ async function installCommands() {
 	await getApp("869534069527027734").commands.post({
 		data: {
 			name: "range",
-			description: "Trade 1 AP for a range increase",
+			description: "Trade 2 AP for a range increase",
 		},
 	});
 
