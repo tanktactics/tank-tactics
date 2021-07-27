@@ -101,7 +101,7 @@ export class TankTacticsGame implements Game {
 			for(let p of this.players) {
 				this.givePlayerPoints(p.id, 1)
 			}
-		}, 120e3);
+		}, 600e3);
 	}
 
 	getClosestPlayer(x: number, y: number) {
@@ -146,7 +146,7 @@ export class TankTacticsGame implements Game {
 		if(p.health <= 0) {
 			return "Je bent al dood man"
 		}
-		console.log(stepCount)
+		
 		while(stepCount > 0) {
 			console.log(stepCount)
 			stepCount--
