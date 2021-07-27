@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid'
 /**
  * A unique game of Tank Tactics
  */
-interface Game {
+export interface Game {
 	id: string;
 	players: Player[];
 }
@@ -13,27 +13,35 @@ interface Game {
  * Player interface
  * Placed in `players` array
  */
-interface Player {
+export interface Player {
 	id: number;
 	name: string;
 	points: number;
 	range: number;
 	health: number;
+	icon: string;
 	coords: {
 		x: number;
 		y: number;
 	}
 }
 
-interface PlayerWithDistance extends Player {
+export interface PlayerWithDistance extends Player {
 	distance?: number;
 }
 
 /**
  * Options passed to game class
  */
-interface TankTacticsGameOptions {
-	playerNames: string[]
+export interface TankTacticsGameOptions {
+	playerInfo: PlayerInfo[]
+}
+
+export interface PlayerInfo {
+	/** Player's name */
+	name: string;
+	/** URL to icon */
+	icon: string;
 }
 
 export class TankTacticsGame implements Game {
@@ -44,21 +52,22 @@ export class TankTacticsGame implements Game {
 	boardHeight: number;
 	selectedFaces: string[]
 
-	constructor({ playerNames }: TankTacticsGameOptions) {
+	constructor({ playerInfo }: TankTacticsGameOptions) {
 
 		// Set board details
-		this.boardHeight = 10;
-		this.boardWidth = 10;
+		this.boardWidth = playerInfo.length * 8;
+		this.boardHeight = playerInfo.length * 5;
 		this.selectedFaces = ['😃', '😅', '🤣', '😉', '😇', '😍', '🤩', '😜', '🤑', '🤢', '🥶']
 
 		// Set ID
 		this.id = uuid()
 
 		// Set players
-		this.players = playerNames.map((name, id) => {
+		this.players = playerInfo.map((info, id) => {
 			return {
 				id,
-				name,
+				name: info.name,
+				icon: info.icon,
 				points: 1,
 				range: 2,
 				health: 3,
