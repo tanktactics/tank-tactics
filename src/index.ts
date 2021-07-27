@@ -434,8 +434,7 @@ async function sendToDiscord(game: TankTacticsGame) {
 				" "
 			)} ${p.range} range`.trim();
 		})
-		.join("\n")}\`\`\`
-	`,
+		.join("\n")}\`\`\``,
 		{
 			files: [sfattach],
 		}
