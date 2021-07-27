@@ -353,10 +353,7 @@ const gameToCanvas = async (game: TankTacticsGame) => {
 				ctx.fillStyle = "yellow";
 			}
 
-			let distanceX = Math.abs(x - closestPlayer.coords.x);
-			let distanceY = Math.abs(y - closestPlayer.coords.y);
-			let dist = Math.sqrt(distanceX*distanceX + distanceY*distanceY)
-			ctx.globalAlpha = Math.max((15 - dist) / 15, 0);
+			ctx.globalAlpha = Math.max((15 - closestPlayer.distance2) / 15, 0);
 
 			ctx.fillRect(
 				x * cellWidth,

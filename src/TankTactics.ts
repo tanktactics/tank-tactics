@@ -29,6 +29,7 @@ export interface Player {
 
 export interface PlayerWithDistance extends Player {
 	distance?: number;
+	distance2?: number;
 }
 
 /**
@@ -112,9 +113,10 @@ export class TankTacticsGame implements Game {
 			const disY = Math.abs(y - player.coords.y)
 
 			newPlayer.distance = Math.max(disX, disY)
+			newPlayer.distance2 = Math.sqrt(disX*disX + disY*disY)
 			
 			return newPlayer
-		}).sort((a, b) => a.distance - b.distance)
+		}).sort((a, b) => a.distance2 - b.distance2)
 
 		return playerDistances[0]
 	}
