@@ -441,8 +441,8 @@ const gameToCanvas = async (game: TankTacticsGame) => {
 			ctx.fillRect(
 				x * cellWidth,
 				y * cellHeight,
-				cellWidth - 2,
-				cellHeight - 2
+				cellWidth - 1,
+				cellHeight - 1
 			);
 
 			if (closestPlayer.distance === 0) {
@@ -450,8 +450,8 @@ const gameToCanvas = async (game: TankTacticsGame) => {
 					playerImages[closestPlayer.name],
 					x * cellWidth,
 					y * cellHeight,
-					cellWidth - 2,
-					cellHeight - 2
+					cellWidth - 1,
+					cellHeight - 1
 				);
 			}
 		}
