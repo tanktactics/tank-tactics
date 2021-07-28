@@ -71,6 +71,7 @@ client.on("ready", async () => {
 		const game = games.find((g) => g.name === channel.name);
 
 		const reply = (content) => {
+			console.log(`Replying at ${new Date().toLocaleString()}: ${content}`);
 			try {
 				// @ts-ignore
 				client.api
@@ -406,7 +407,7 @@ client.on("message", async (msg) => {
 });
 
 const gameToCanvas = async (game: TankTacticsGame) => {
-	const canvas = createCanvas(game.boardWidth * 60, game.boardHeight * 60);
+	const canvas = createCanvas(game.boardWidth * 10, game.boardHeight * 10);
 	const ctx = canvas.getContext("2d");
 
 	ctx.fillStyle = "#36393E";
