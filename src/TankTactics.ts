@@ -53,6 +53,7 @@ export class TankTacticsGame implements Game {
 	boardWidth: number;
 	boardHeight: number;
 	eventListeners: any[];
+	guild: string;
 
 	constructor(data) {
 		this.eventListeners = [];
@@ -77,6 +78,7 @@ export class TankTacticsGame implements Game {
 
 		// Set game details
 		this.name = data.name ?? "No name";
+		this.guild = data.guild ?? "869534069527027734";
 
 		// Set board details
 		this.boardWidth = data.boardWidth ?? playerList.length * 8;
@@ -122,7 +124,7 @@ export class TankTacticsGame implements Game {
 			})
 			.sort((a, b) => a.distance2 - b.distance2);
 
-		return playerDistances[0];
+		return playerDistances;
 	}
 
 	takePlayerPoints(id: number, pointCount: number = 1): "ok" | "not_found" {
@@ -252,6 +254,10 @@ export class TankTacticsGame implements Game {
 
 			if (victim.health === 0) {
 				attacker.kills++;
+
+				this.givePlayerPoints(attacker.id, victim.points);
+				this.takePlayerPoints(victim.id, victim.points);
+
 				return "Goed bezig hij is dood";
 			}
 		} else {
@@ -273,7 +279,7 @@ export class TankTacticsGame implements Game {
 			return "lol die is al dood";
 		}
 
-		if (gifter.points <= pointCount) {
+		if (gifter.points < pointCount) {
 			return "bruh daar heb je de punten niet voor hoor";
 		}
 
@@ -281,7 +287,7 @@ export class TankTacticsGame implements Game {
 		const disY = Math.abs(gifter.coords.y - receiver.coords.y);
 		const dis = Math.max(disX, disY);
 
-		if (Math.floor(dis) <= gifter.range) {
+		if (Math.floor(dis) <= gifter.range || gifter.health <= 0) {
 			this.takePlayerPoints(gifter.id, pointCount);
 			this.givePlayerPoints(receiver.id, pointCount);
 		} else {

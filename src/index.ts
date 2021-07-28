@@ -34,10 +34,8 @@ function doGameListeners() {
 		game.eventListeners = game.eventListeners.filter((v) => v.callback);
 		if (game.eventListeners.length === 0)
 			game.on("points-given", async () => {
-				const guild = await client.guilds.fetch("869534069527027734");
-
 				// @ts-ignore
-				const channels = [...guild.channels.cache.toJSON()];
+				const channels = await getAllChannels();
 				let gameChannel = channels.find((c) => c.name === game.name);
 
 				console.log(channels);
@@ -232,129 +230,120 @@ client.on("ready", async () => {
 });
 
 async function installCommands() {
-	await getApp("869534069527027734").commands.post({
-		data: {
-			name: "board",
-			description: "Get an up-to-date view of the board",
-		},
-	});
+	for (let guild of Object.values(client.guilds.cache.toJSON())) {
+		console.log(guild);
+		await getApp(guild.id).commands.post({
+			data: {
+				name: "board",
+				description: "Get an up-to-date view of the board",
+			},
+		});
 
-	await getApp("869534069527027734").commands.post({
-		data: {
-			name: "pos",
-			description: "Get your in-game coordinates",
-		},
-	});
+		await getApp(guild.id).commands.post({
+			data: {
+				name: "pos",
+				description: "Get your in-game coordinates",
+			},
+		});
 
-	await getApp("869534069527027734").commands.post({
-		data: {
-			name: "range",
-			description: "Trade 2 AP for a range increase",
-		},
-	});
+		await getApp(guild.id).commands.post({
+			data: {
+				name: "range",
+				description: "Trade 2 AP for a range increase",
+			},
+		});
 
-	await getApp("869534069527027734").commands.post({
-		data: {
-			name: "walk",
-			description: "Use 1 AP to walk in any of 8 direction",
-			options: [
-				{
-					name: "direction",
-					description: "The driection you want to walk in",
-					type: 3,
-					required: true,
-					choices: [
-						{
-							name: "Up",
-							value: "up",
-						},
-						{
-							name: "Upper left",
-							value: "up_left",
-						},
-						{
-							name: "Upper right",
-							value: "up_right",
-						},
-						{
-							name: "Left",
-							value: "left",
-						},
-						{
-							name: "Right",
-							value: "right",
-						},
-						{
-							name: "Down",
-							value: "down",
-						},
-						{
-							name: "Bottom right",
-							value: "down_right",
-						},
-						{
-							name: "Bottom left",
-							value: "down_left",
-						},
-					],
-				},
-				{
-					name: "step_count",
-					description: "The amount of times to repeat this action",
-					type: 3,
-					required: false,
-					choices: Array(20)
-						.fill(0)
-						.map((v, i) => ({
-							name: (i + 1).toString(),
-							value: (i + 1).toString(),
-						})),
-				},
-			],
-		},
-	});
+		await getApp(guild.id).commands.post({
+			data: {
+				name: "walk",
+				description: "Use 1 AP to walk in any of 8 direction",
+				options: [
+					{
+						name: "direction",
+						description: "The driection you want to walk in",
+						type: 3,
+						required: true,
+						choices: [
+							{
+								name: "Up",
+								value: "up",
+							},
+							{
+								name: "Upper left",
+								value: "up_left",
+							},
+							{
+								name: "Upper right",
+								value: "up_right",
+							},
+							{
+								name: "Left",
+								value: "left",
+							},
+							{
+								name: "Right",
+								value: "right",
+							},
+							{
+								name: "Down",
+								value: "down",
+							},
+							{
+								name: "Bottom right",
+								value: "down_right",
+							},
+							{
+								name: "Bottom left",
+								value: "down_left",
+							},
+						],
+					},
+					{
+						name: "step_count",
+						description: "The amount of times to repeat this action",
+						type: 4,
+						required: false,
+					},
+				],
+			},
+		});
 
-	await getApp("869534069527027734").commands.post({
-		data: {
-			name: "attack",
-			description: "Attack someone, taking 1 HP if they are in range",
-			options: [
-				{
-					name: "victim",
-					description: "The person you want to kill",
-					type: 6,
-					required: true,
-				},
-			],
-		},
-	});
+		await getApp(guild.id).commands.post({
+			data: {
+				name: "attack",
+				description: "Attack someone, taking 1 HP if they are in range",
+				options: [
+					{
+						name: "victim",
+						description: "The person you want to kill",
+						type: 6,
+						required: true,
+					},
+				],
+			},
+		});
 
-	await getApp("869534069527027734").commands.post({
-		data: {
-			name: "gift",
-			description: "Gift someone in your range a set amount of AP",
-			options: [
-				{
-					name: "receiver",
-					description: "The person you want to gift AP",
-					type: 6,
-					required: true,
-				},
-				{
-					name: "ap_count",
-					description: "The amount of AP you want to donate",
-					type: 3,
-					required: true,
-					choices: Array(20)
-						.fill(0)
-						.map((v, i) => ({
-							name: (i + 1).toString(),
-							value: (i + 1).toString(),
-						})),
-				},
-			],
-		},
-	});
+		await getApp(guild.id).commands.post({
+			data: {
+				name: "gift",
+				description: "Gift someone in your range a set amount of AP",
+				options: [
+					{
+						name: "receiver",
+						description: "The person you want to gift AP",
+						type: 6,
+						required: true,
+					},
+					{
+						name: "ap_count",
+						description: "The amount of AP you want to donate",
+						type: 4,
+						required: true,
+					},
+				],
+			},
+		});
+	}
 }
 
 client.on("message", async (msg) => {
@@ -378,7 +367,10 @@ client.on("message", async (msg) => {
 
 		const game = new TankTacticsGame({
 			playerInfo: players,
-			name: `game-${games.length + 1}`,
+			name: `${client.user.username.replace(/[^a-zA-Z]/g, "").toLowerCase()}-${
+				games.length + 1
+			}`,
+			guild: msg.guild.id,
 		});
 
 		games.push(game);
@@ -424,16 +416,21 @@ const gameToCanvas = async (game: TankTacticsGame) => {
 
 	for (let y = 0; y < game.boardHeight; y++) {
 		for (let x = 0; x < game.boardWidth; x++) {
-			const closestPlayer = game.getClosestPlayer(x, y);
+			const closestPlayers = game.getClosestPlayer(x, y);
+			const closestPlayer = closestPlayers[0];
 
 			ctx.fillStyle = "white";
 
-			if (closestPlayer.distance === 0) {
-				ctx.fillStyle = "transparent";
-			} else if (Math.floor(closestPlayer.distance) === 1) {
-				ctx.fillStyle = "orange";
-			} else if (Math.floor(closestPlayer.distance) <= closestPlayer.range) {
-				ctx.fillStyle = "yellow";
+			// if (closestPlayer.distance === 0) {
+			// 	ctx.fillStyle = "transparent";
+			// } else if (Math.floor(closestPlayer.distance) <= closestPlayer.range) {
+			// 	ctx.fillStyle = "yellow";
+			// }
+
+			for (let player of closestPlayers) {
+				if (Math.floor(player.distance) <= player.range) {
+					ctx.fillStyle = "yellow";
+				}
 			}
 
 			ctx.globalAlpha = Math.max((15 - closestPlayer.distance2) / 15, 0);
@@ -460,18 +457,30 @@ const gameToCanvas = async (game: TankTacticsGame) => {
 	return canvas;
 };
 
+async function getAllChannels() {
+	await Promise.all(
+		Object.values(client.guilds.cache.toJSON()).map(async (g) => {
+			await client.guilds.fetch(g.id);
+		})
+	);
+
+	// @ts-ignore
+	const channels = [...Object.values(client.channels.cache.toJSON())];
+	return channels;
+}
+
 async function sendToDiscord(game: TankTacticsGame) {
 	console.time("canvas-make");
 	const gameCanvas = await gameToCanvas(game);
 	console.timeEnd("canvas-make");
 
 	console.time("find-channel");
-	const guild = await client.guilds.fetch("869534069527027734");
-	// @ts-ignore
-	const channels = [...guild.channels.cache.toJSON()];
+
+	const channels = await getAllChannels();
 	let gameChannel = channels.find((c) => c.name === game.name);
 	if (!gameChannel) {
-		gameChannel = await guild.channels.create(game.name);
+		let g = await client.guilds.fetch(game.guild);
+		gameChannel = await g.channels.create(game.name);
 	}
 	let channel = client.channels.cache.get(gameChannel.id);
 	console.timeEnd("find-channel");
