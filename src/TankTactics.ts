@@ -261,6 +261,36 @@ export class TankTacticsGame implements Game {
 		return "ok";
 	}
 
+	doGift(gifterId: number, receiverId: number, pointCount: number) {
+		const gifter = this.players.find((p) => p.id === gifterId);
+		const receiver = this.players.find((p) => p.id === receiverId);
+
+		if (!gifter || !receiver) {
+			return "Ja die bestaat niet he";
+		}
+
+		if (receiver.health <= 0) {
+			return "lol die is al dood";
+		}
+
+		if (gifter.points <= pointCount) {
+			return "bruh daar heb je de punten niet voor hoor";
+		}
+
+		const disX = Math.abs(gifter.coords.x - receiver.coords.x);
+		const disY = Math.abs(gifter.coords.y - receiver.coords.y);
+		const dis = Math.max(disX, disY);
+
+		if (Math.floor(dis) <= gifter.range) {
+			this.takePlayerPoints(gifter.id, pointCount);
+			this.givePlayerPoints(receiver.id, pointCount);
+		} else {
+			return "Die is veeeeeeeeel te ver weg";
+		}
+
+		return "ok";
+	}
+
 	doRangeIncrease(playerId: number) {
 		const player = this.players.find((p) => p.id === playerId);
 

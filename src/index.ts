@@ -31,6 +31,7 @@ const games: TankTacticsGame[] = db
 
 function doGameListeners() {
 	for (let game of games) {
+		game.eventListeners = game.eventListeners.filter((v) => v.callback);
 		if (game.eventListeners.length === 0)
 			game.on("points-given", async () => {
 				const guild = await client.guilds.fetch("869534069527027734");
@@ -73,6 +74,7 @@ client.on("ready", async () => {
 			try {
 				// @ts-ignore
 				client.api
+					// @ts-ignore
 					.interactions(interaction.id, interaction.token)
 					.callback.post({
 						data: {
@@ -160,6 +162,42 @@ client.on("ready", async () => {
 				}
 
 				reply("Zo doen wij dat bruur");
+				sendToDiscord(game);
+
+				break;
+			}
+			case "gift": {
+				const apCount = Number(
+					Number(
+						interaction.data.options.find((v) => v.name === "ap_count").value
+					) || 0
+				);
+				const receiverId = interaction.data.options.find(
+					(v) => v.name === "receiver"
+				).value;
+				const member = await client.users.fetch(receiverId);
+				const tag = `${member.username}#${member.discriminator}`;
+
+				if (tag === player.name) {
+					reply("Wrm wil je jezelf giften???");
+					return;
+				}
+
+				const receiver = game.players.find((p) => p.name === tag);
+				if (!receiver) {
+					return "Die guy speelt niet eens eh";
+				}
+
+				// Now really attack
+				const giftRes = game.doGift(player.id, receiver.id, apCount);
+
+				if (giftRes !== "ok") {
+					reply(giftRes);
+					sendToDiscord(game);
+					return;
+				}
+
+				reply("Dat is lief van je");
 				sendToDiscord(game);
 
 				break;
@@ -285,6 +323,33 @@ async function installCommands() {
 					description: "The person you want to kill",
 					type: 6,
 					required: true,
+				},
+			],
+		},
+	});
+
+	await getApp("869534069527027734").commands.post({
+		data: {
+			name: "gift",
+			description: "Gift someone in your range a set amount of AP",
+			options: [
+				{
+					name: "receiver",
+					description: "The person you want to gift AP",
+					type: 6,
+					required: true,
+				},
+				{
+					name: "ap_count",
+					description: "The amount of AP you want to donate",
+					type: 3,
+					required: true,
+					choices: Array(20)
+						.fill(0)
+						.map((v, i) => ({
+							name: (i + 1).toString(),
+							value: (i + 1).toString(),
+						})),
 				},
 			],
 		},
