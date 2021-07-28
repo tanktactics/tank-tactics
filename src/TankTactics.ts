@@ -1,3 +1,4 @@
+import { DataResolver } from "discord.js";
 import { v4 as uuid } from "uuid";
 
 /**
@@ -54,8 +55,11 @@ export class TankTacticsGame implements Game {
 	boardHeight: number;
 	eventListeners: any[];
 	guild: string;
+	lastGiftRound: number;
+	giftRoundInterval: number;
 
 	constructor(data) {
+		this.giftRoundInterval = 600e3;
 		this.eventListeners = [];
 
 		const playerList =
@@ -79,6 +83,7 @@ export class TankTacticsGame implements Game {
 		// Set game details
 		this.name = data.name ?? "No name";
 		this.guild = data.guild ?? "869534069527027734";
+		this.lastGiftRound = data.lastGiftRound ?? 0;
 
 		// Set board details
 		this.boardWidth = data.boardWidth ?? playerList.length * 8;
@@ -99,13 +104,22 @@ export class TankTacticsGame implements Game {
 		this.players = playerList;
 
 		// Every so often, give every player a point
-		setInterval(() => {
+		this.checkGiftRounds();
+	}
+
+	checkGiftRounds() {
+		let diff = Date.now() - this.lastGiftRound;
+		let timeRemaining = Math.max(this.giftRoundInterval - diff, 0);
+
+		setTimeout(() => {
 			console.log("Giving points at", new Date().toLocaleString("nl"));
 			this.emit("points-given", Date.now());
 			for (let p of this.players) {
 				this.givePlayerPoints(p.id, 1);
 			}
-		}, 600e3);
+			this.lastGiftRound = Date.now();
+			this.checkGiftRounds();
+		}, timeRemaining);
 	}
 
 	getClosestPlayer(x: number, y: number) {

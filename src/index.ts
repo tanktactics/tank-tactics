@@ -514,10 +514,13 @@ async function sendToDiscord(game: TankTacticsGame) {
 		}
 	}
 
+	const nextApRound = game.lastGiftRound + game.giftRoundInterval;
+
 	console.time("send-image");
 	// @ts-ignore
 	await channel.send(
 		`
+		Volgende AP drop man: <t:${Math.floor(nextApRound / 1e3)}:R>
 	\`\`\`${game.players
 		.sort((a, b) => b.points - a.points)
 		.sort((a, b) => b.health - a.health)
