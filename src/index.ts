@@ -460,8 +460,11 @@ const gameToCanvas = async (game: TankTacticsGame) => {
 };
 
 async function sendToDiscord(game: TankTacticsGame) {
+	console.time("canvas-make");
 	const gameCanvas = await gameToCanvas(game);
+	console.timeEnd("canvas-make");
 
+	console.time("find-channel");
 	const guild = await client.guilds.fetch("869534069527027734");
 	// @ts-ignore
 	const channels = [...guild.channels.cache.toJSON()];
@@ -469,13 +472,15 @@ async function sendToDiscord(game: TankTacticsGame) {
 	if (!gameChannel) {
 		gameChannel = await guild.channels.create(game.name);
 	}
-
 	let channel = client.channels.cache.get(gameChannel.id);
+	console.timeEnd("find-channel");
 
+	console.time("parse-image");
 	// Convert to image and send it
 	const url = gameCanvas.toDataURL();
 	const sfbuff = Buffer.from(url.split(",")[1], "base64");
 	const sfattach = new Discord.MessageAttachment(sfbuff, "output.png");
+	console.timeEnd("parse-image");
 
 	let longestName = "";
 	for (let player of game.players) {
@@ -484,6 +489,7 @@ async function sendToDiscord(game: TankTacticsGame) {
 		}
 	}
 
+	console.time("send-image");
 	// @ts-ignore
 	await channel.send(
 		`
@@ -504,6 +510,7 @@ async function sendToDiscord(game: TankTacticsGame) {
 			files: [sfattach],
 		}
 	);
+	console.timeEnd("send-image");
 }
 
 setInterval(() => {
