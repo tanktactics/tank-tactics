@@ -283,6 +283,10 @@ export class TankTacticsGame implements Game {
 			return "bruh daar heb je de punten niet voor hoor";
 		}
 
+		if (pointCount <= 0) {
+			return "bruh doe normaal wil je cheaten ofz......";
+		}
+
 		const disX = Math.abs(gifter.coords.x - receiver.coords.x);
 		const disY = Math.abs(gifter.coords.y - receiver.coords.y);
 		const dis = Math.max(disX, disY);
