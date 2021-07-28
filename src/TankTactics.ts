@@ -113,14 +113,13 @@ export class TankTacticsGame implements Game {
 
 		setTimeout(() => {
 			console.log("Giving points at", new Date().toLocaleString("nl"));
-			this.emit("points-given", Date.now());
 			for (let p of this.players) {
 				this.givePlayerPoints(p.id, 1);
 			}
 			this.lastGiftRound = Date.now();
 			this.checkGiftRounds();
+			this.emit("points-given", Date.now());
 		}, timeRemaining);
-		this.emit("change", "points-given");
 	}
 
 	getClosestPlayer(x: number, y: number) {
