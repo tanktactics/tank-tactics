@@ -231,7 +231,7 @@ client.on("ready", async () => {
 
 async function installCommands() {
 	for (let guild of Object.values(client.guilds.cache.toJSON())) {
-		console.log(guild);
+		
 		await getApp(guild.id).commands.post({
 			data: {
 				name: "board",
