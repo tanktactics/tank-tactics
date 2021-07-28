@@ -231,8 +231,8 @@ export class TankTacticsGame implements Game {
 				p.coords.y = newY;
 
 				this.takePlayerPoints(id, 1);
-			} else {
-				return "Nu heb je geen punten meer";
+			} else if (stepCount > 0) {
+				return `Na ${stepCount} stappen naar ${dir} heb je geen punten meer, dat is kut man`;
 			}
 		}
 		return "ok";

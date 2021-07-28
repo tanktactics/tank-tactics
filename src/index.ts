@@ -125,7 +125,7 @@ client.on("ready", async () => {
 					return;
 				}
 
-				reply(`Veel plezier daar ${desiredDirection}`);
+				reply(`Veel plezier daar, ${stepCount} naar ${desiredDirection}`);
 				sendToDiscord(game);
 				break;
 			}
@@ -160,7 +160,8 @@ client.on("ready", async () => {
 					return;
 				}
 
-				reply("Zo doen wij dat bruur");
+				// reply("Zo doen wij dat bruur");
+				reply(`${victim.name} aanvallen? Broer jij bent echt gangster`);
 				sendToDiscord(game);
 
 				break;
@@ -196,7 +197,9 @@ client.on("ready", async () => {
 					return;
 				}
 
-				reply("Dat is lief van je");
+				reply(
+					`Dat is lief van je, om die arme ${receiver.name} lekker ${apCount} van je mooie AP te geven`
+				);
 				sendToDiscord(game);
 
 				break;
