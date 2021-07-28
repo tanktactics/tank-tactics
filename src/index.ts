@@ -426,6 +426,8 @@ const gameToCanvas = async (game: TankTacticsGame) => {
 			// 	ctx.fillStyle = "yellow";
 			// }
 
+			ctx.globalAlpha = Math.max((15 - closestPlayer.distance2) / 15, 0);
+
 			const colors = [
 				"rgb(0, 122, 255)",
 				"rgb(52, 199, 89)",
@@ -444,7 +446,9 @@ const gameToCanvas = async (game: TankTacticsGame) => {
 				}
 			}
 
-			ctx.globalAlpha = Math.max((15 - closestPlayer.distance2) / 15, 0);
+			if (Math.floor(closestPlayer.distance) <= closestPlayer.range) {
+				ctx.fillStyle = colors[Number(closestPlayer.id) % colors.length];
+			}
 
 			ctx.fillRect(
 				x * cellWidth,
