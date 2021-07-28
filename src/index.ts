@@ -426,9 +426,21 @@ const gameToCanvas = async (game: TankTacticsGame) => {
 			// 	ctx.fillStyle = "yellow";
 			// }
 
+			const colors = [
+				"rgb(0, 122, 255)",
+				"rgb(52, 199, 89)",
+				"rgb(255, 149, 0)",
+				"rgb(88, 86, 214)",
+				"rgb(255, 45, 85)",
+				"rgb(175, 82, 222)",
+				"rgb(255, 59, 48)",
+				"rgb(90, 200, 250)",
+				"rgb(255, 204, 0)",
+			];
+
 			for (let player of closestPlayers) {
 				if (Math.floor(player.distance) <= player.range) {
-					ctx.fillStyle = "yellow";
+					ctx.fillStyle = colors[Number(player.id) % colors.length];
 				}
 			}
 
