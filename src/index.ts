@@ -46,6 +46,7 @@ function doGameListeners() {
 					"**Everybody in this match has received a single action point.**"
 				);
 				sendToDiscord(game);
+				db.set("games", games);
 			});
 	}
 }

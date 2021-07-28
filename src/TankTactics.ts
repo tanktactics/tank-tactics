@@ -120,6 +120,7 @@ export class TankTacticsGame implements Game {
 			this.lastGiftRound = Date.now();
 			this.checkGiftRounds();
 		}, timeRemaining);
+		this.emit("change", "points-given");
 	}
 
 	getClosestPlayer(x: number, y: number) {
