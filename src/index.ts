@@ -25,34 +25,36 @@ const getApp = (guildId) => {
 };
 const playerImages = {};
 
-const games: TankTacticsGame[] = db
-	.get("games")
-	.map((g) => new TankTacticsGame(g));
+let games: TankTacticsGame[] = [];
 
 function doGameListeners() {
 	for (let game of games) {
-		game.eventListeners = game.eventListeners.filter((v) => v.callback);
-		if (game.eventListeners.length === 0)
-			game.on("points-given", async () => {
-				// @ts-ignore
-				const channels = await getAllChannels();
-				let gameChannel = channels.find((c) => c.name === game.name);
+		game.eventListeners = [];
+		game.on("points-given", async () => {
+			// @ts-ignore
+			const channels = await getAllChannels();
+			let gameChannel = channels.find((c) => c.name === game.name);
 
-				console.log(channels);
-				const c = await client.channels.fetch(gameChannel.id);
+			const c = await client.channels.fetch(gameChannel.id);
 
-				// @ts-ignore
-				await c.send(
-					"**Everybody in this match has received a single action point.**"
-				);
-				sendToDiscord(game);
-				db.set("games", games);
-			});
+			// @ts-ignore
+			await c.send(
+				"**Everybody in this match has received a single action point.**"
+			);
+			sendToDiscord(game);
+			db.set("games", games);
+		});
+
+		game.on("save", () => {
+			db.set("games", games);
+		});
 	}
 }
 
 client.on("ready", async () => {
 	console.log(`Logged in as ${client.user.tag}!`);
+
+	games = db.get("games").map((g) => new TankTacticsGame(g));
 
 	doGameListeners();
 
@@ -100,6 +102,14 @@ client.on("ready", async () => {
 		if (!player) {
 			reply("Jij bent niet eens een speler wtf");
 			return;
+		}
+
+		if (game.state === "ended") {
+			// @ts-ignore
+			let t = channel.updateOverwrite(channel.guild.roles.everyone, {
+				SEND_MESSAGES: false,
+			});
+			console.log(t);
 		}
 
 		switch (slashCommandName) {
@@ -524,7 +534,13 @@ async function sendToDiscord(game: TankTacticsGame) {
 	// @ts-ignore
 	await channel.send(
 		`
-		Volgende AP drop man: <t:${Math.floor(nextApRound / 1e3)}:R>
+		${
+			Date.now() > nextApRound ? "Laatste" : "Volgende"
+		} AP drop man: <t:${Math.floor(nextApRound / 1e3)}:R>. ${
+			game.state === "ongoing"
+				? ""
+				: "De game is KLAAR.... DONESO, AFGELOPEN!!!!"
+		}
 	\`\`\`${game.players
 		.sort((a, b) => b.points - a.points)
 		.sort((a, b) => b.health - a.health)
@@ -533,9 +549,11 @@ async function sendToDiscord(game: TankTacticsGame) {
 				longestName.length + 2,
 				" "
 			)} ${`${p.points} AP`.padEnd(5, " ")} ${`${p.health} lives`.padEnd(
-				10,
+				8,
 				" "
-			)} ${p.range} range`.trim();
+			)} ${`${p.range} range`.padEnd(8, " 0")} ${
+				p.kills ? "" : `${p.kills} kills`
+			}`.trim();
 		})
 		.join("\n")}\`\`\``,
 		{

@@ -1,4 +1,3 @@
-import { DataResolver } from "discord.js";
 import { v4 as uuid } from "uuid";
 
 /**
@@ -57,6 +56,7 @@ export class TankTacticsGame implements Game {
 	guild: string;
 	lastGiftRound: number;
 	giftRoundInterval: number;
+	state: "ongoing" | "ended";
 
 	constructor(data) {
 		this.giftRoundInterval = 600e3;
@@ -84,6 +84,7 @@ export class TankTacticsGame implements Game {
 		this.name = data.name ?? "No name";
 		this.guild = data.guild ?? "869534069527027734";
 		this.lastGiftRound = data.lastGiftRound ?? 0;
+		this.state = data.state ?? "ongoing";
 
 		// Set board details
 		this.boardWidth = data.boardWidth ?? playerList.length * 8;
@@ -107,7 +108,27 @@ export class TankTacticsGame implements Game {
 		this.checkGiftRounds();
 	}
 
+	doStateCheck() {
+		if (this.state !== "ongoing")
+			return "Broooo de game is al LANG afgelopen.........";
+
+		const remainingPlayers = this.players.filter((p) => p.health > 0);
+		if (remainingPlayers.length <= 1) {
+			this.state = "ended";
+			this.emit("save", "state-change");
+			console.log("winnaar");
+			return `En DE WINNAAR ISSSSSS ${remainingPlayers
+				.map((p) => p.name)
+				.join(", ")}.... Echt pro`;
+		}
+
+		return "ok";
+	}
+
 	checkGiftRounds() {
+		let stateCheck = this.doStateCheck();
+		if (stateCheck !== "ok") return stateCheck;
+
 		let diff = Date.now() - this.lastGiftRound;
 		let timeRemaining = Math.max(this.giftRoundInterval - diff, 0);
 
@@ -172,6 +193,9 @@ export class TankTacticsGame implements Game {
 			| "down_left",
 		stepCount: number = 1
 	) {
+		let stateCheck = this.doStateCheck();
+		if (stateCheck !== "ok") return stateCheck;
+
 		const p = this.players.find((p) => p.id === id);
 		if (!p) {
 			return "not_found";
@@ -239,6 +263,9 @@ export class TankTacticsGame implements Game {
 	}
 
 	doAttack(attackerId: number, victimId: number) {
+		let stateCheck = this.doStateCheck();
+		if (stateCheck !== "ok") return stateCheck;
+
 		const attacker = this.players.find((p) => p.id === attackerId);
 		const victim = this.players.find((p) => p.id === victimId);
 
@@ -272,6 +299,9 @@ export class TankTacticsGame implements Game {
 				this.givePlayerPoints(attacker.id, victim.points);
 				this.takePlayerPoints(victim.id, victim.points);
 
+				let stateCheck = this.doStateCheck();
+				if (stateCheck !== "ok") return "Je hebt m gekilled: " + stateCheck;
+
 				return "Goed bezig hij is dood";
 			}
 		} else {
@@ -282,6 +312,9 @@ export class TankTacticsGame implements Game {
 	}
 
 	doGift(gifterId: number, receiverId: number, pointCount: number) {
+		let stateCheck = this.doStateCheck();
+		if (stateCheck !== "ok") return stateCheck;
+
 		const gifter = this.players.find((p) => p.id === gifterId);
 		const receiver = this.players.find((p) => p.id === receiverId);
 
@@ -316,6 +349,9 @@ export class TankTacticsGame implements Game {
 	}
 
 	doRangeIncrease(playerId: number) {
+		let stateCheck = this.doStateCheck();
+		if (stateCheck !== "ok") return stateCheck;
+
 		const player = this.players.find((p) => p.id === playerId);
 
 		if (!player) {
