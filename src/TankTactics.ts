@@ -46,6 +46,19 @@ export interface PlayerInfo {
 	icon: string;
 }
 
+type GameEventType =
+	| "attack"
+	| "walk"
+	| "gift"
+	| "point_take"
+	| "point_give"
+	| "range_increase";
+
+interface GameEvent {
+	type: GameEventType;
+	props: any;
+}
+
 export class TankTacticsGame implements Game {
 	id: string;
 	name: string;
@@ -57,9 +70,11 @@ export class TankTacticsGame implements Game {
 	lastGiftRound: number;
 	giftRoundInterval: number;
 	state: "ongoing" | "ended";
+	log: GameEvent[];
 
 	constructor(data) {
 		this.giftRoundInterval = data.giftRoundInterval ?? 600e3;
+		this.log = data.log ?? [];
 		this.eventListeners = [];
 
 		const playerList =
@@ -166,6 +181,10 @@ export class TankTacticsGame implements Game {
 		let p = this.players.find((p) => p.id === id);
 		if (p) {
 			p.points = Math.max(p.points - pointCount, 0);
+			this.addLog("point_take", {
+				pointCount,
+				player: p.id,
+			});
 			return "ok";
 		}
 		return "not_found";
@@ -175,6 +194,10 @@ export class TankTacticsGame implements Game {
 		let p = this.players.find((p) => p.id === id);
 		if (p) {
 			p.points += pointCount;
+			this.addLog("point_give", {
+				pointCount,
+				player: p.id,
+			});
 			return "ok";
 		}
 		return "not_found";
@@ -204,6 +227,11 @@ export class TankTacticsGame implements Game {
 		if (p.health <= 0) {
 			return "Je bent al dood man";
 		}
+
+		this.addLog("walk", {
+			dir,
+			player: p.id,
+		});
 
 		while (stepCount > 0) {
 			console.log(stepCount);
@@ -300,6 +328,13 @@ export class TankTacticsGame implements Game {
 				this.takePlayerPoints(victim.id, victim.points);
 
 				let stateCheck = this.doStateCheck();
+
+				this.addLog("attack", {
+					attacker: attacker.id,
+					victim: victim.id,
+					victimHealth: victim.health,
+				});
+
 				if (stateCheck !== "ok") return "Je hebt m gekilled: " + stateCheck;
 
 				return "Goed bezig hij is dood";
@@ -307,6 +342,12 @@ export class TankTacticsGame implements Game {
 		} else {
 			return "Die is veeeeeeeeel te ver weg";
 		}
+
+		this.addLog("attack", {
+			attacker: attacker.id,
+			victim: victim.id,
+			victimHealth: victim.health,
+		});
 
 		return "ok";
 	}
@@ -345,6 +386,12 @@ export class TankTacticsGame implements Game {
 			return "Die is veeeeeeeeel te ver weg";
 		}
 
+		this.addLog("gift", {
+			gifter: gifter.id,
+			receiver: receiver.id,
+			points: pointCount,
+		});
+
 		return "ok";
 	}
 
@@ -369,7 +416,19 @@ export class TankTacticsGame implements Game {
 		this.takePlayerPoints(player.id, 2);
 		player.range++;
 
+		this.addLog("range_increase", {
+			player: player.id,
+		});
+
 		return "ok";
+	}
+
+	private addLog(type: GameEventType, props: any) {
+		this.log.push({
+			type,
+			props,
+		});
+		this.emit("save", "log");
 	}
 
 	on(evtName: string, callback: any) {
