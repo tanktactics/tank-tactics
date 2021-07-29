@@ -3,6 +3,7 @@ import db from "./db";
 import * as Discord from "discord.js";
 import { config } from "dotenv";
 import { createCanvas, loadImage } from "canvas";
+import * as fs from "fs";
 
 const prefix = "!";
 
@@ -49,8 +50,25 @@ function doGameListeners() {
 			db.set("games", games);
 		});
 
-		game.on("save", () => {
+		game.on("save", async (type) => {
 			db.set("games", games);
+			if (type === "log") {
+				const canvas = await gameToCanvas(game);
+
+				if (!fs.existsSync(`game-imgs/`)) fs.mkdirSync(`game-imgs/`);
+
+				if (!fs.existsSync(`game-imgs/${game.name}/`))
+					fs.mkdirSync(`game-imgs/${game.name}/`);
+
+				const url = canvas.toDataURL();
+				const base64Data = url.replace(/^data:image\/png;base64,/, "");
+
+				fs.writeFileSync(
+					`game-imgs/${game.name}/${game.log.length}.png`,
+					base64Data,
+					"base64"
+				);
+			}
 		});
 	}
 }
