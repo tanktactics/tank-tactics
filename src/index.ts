@@ -667,7 +667,7 @@ async function sendToDiscord(game: TankTacticsGame) {
 				8,
 				" "
 			)} ${`${p.range} range`.padEnd(8, " 0")} ${
-				p.kills ? "" : `${p.kills} kills`
+				p.kills ? `${p.kills} kills` : ""
 			}`.trim();
 		})
 		.join("\n")}\`\`\``,
