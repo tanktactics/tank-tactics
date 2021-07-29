@@ -35,6 +35,10 @@ function doGameListeners() {
 			const channels = await getAllChannels();
 			let gameChannel = channels.find((c) => c.name === game.name);
 
+			if (!gameChannel) {
+				return;
+			}
+
 			const c = await client.channels.fetch(gameChannel.id);
 
 			// @ts-ignore
@@ -90,6 +94,62 @@ client.on("ready", async () => {
 				// Oh well
 			}
 		};
+
+		if (slashCommandName === "create") {
+			const apCountInterval =
+				interaction.data.options.find((v) => v.name === "ap_interval").value *
+				60e3;
+
+			const memberIds = [
+				// @ts-ignore
+				...new Set(
+					interaction.data.options
+						.filter((v) => v.name.startsWith("player"))
+						.map((v) => v.value)
+				),
+			];
+
+			if (memberIds.length < 3) {
+				reply("Op zn minst 3 spelers eh a neef niffo makker maatje");
+				return;
+			}
+
+			const members = await Promise.all(
+				memberIds.map((id) => client.users.fetch(id))
+			);
+
+			const players: PlayerInfo[] = members.map((v) => {
+				return {
+					name: v.tag,
+					icon: v.avatarURL().replace(/webp/g, "png"),
+				};
+			});
+
+			if (players.length < 3) {
+				reply("Op zn minst 3 spelers eh a neef niffo makker maatje");
+				return;
+			}
+			const game = new TankTacticsGame({
+				playerInfo: players,
+				giftRoundInterval: apCountInterval ?? 600e3,
+				name: `${client.user.username
+					.replace(/[^a-zA-Z]/g, "")
+					.toLowerCase()}-${games.length + 1}`,
+				// @ts-ignore
+				guild: channel.guild.id,
+			});
+
+			games.push(game);
+
+			db.set("games", games);
+
+			doGameListeners();
+
+			sendToDiscord(game);
+
+			reply("Okie dokie");
+			return;
+		}
 
 		if (!game) {
 			reply("Wtf flik je me nou?! Je moet t wel in n game kanaal doen man wtf");
@@ -245,156 +305,193 @@ client.on("ready", async () => {
 
 async function installCommands() {
 	for (let guild of Object.values(client.guilds.cache.toJSON())) {
-		await getApp(guild.id).commands.post({
-			data: {
-				name: "board",
-				description: "Get an up-to-date view of the board",
-			},
-		});
+		console.log(`Updating commands for ${guild.name}`);
+		const promises = [
+			getApp(guild.id).commands.post({
+				data: {
+					name: "board",
+					description: "Get an up-to-date view of the board",
+				},
+			}),
+			getApp(guild.id).commands.post({
+				data: {
+					name: "pos",
+					description: "Get your in-game coordinates",
+				},
+			}),
+			getApp(guild.id).commands.post({
+				data: {
+					name: "range",
+					description: "Trade 2 AP for a range increase",
+				},
+			}),
+			getApp(guild.id).commands.post({
+				data: {
+					name: "walk",
+					description: "Use 1 AP to walk in any of 8 direction",
+					options: [
+						{
+							name: "direction",
+							description: "The driection you want to walk in",
+							type: 3,
+							required: true,
+							choices: [
+								{
+									name: "Up",
+									value: "up",
+								},
+								{
+									name: "Upper left",
+									value: "up_left",
+								},
+								{
+									name: "Upper right",
+									value: "up_right",
+								},
+								{
+									name: "Left",
+									value: "left",
+								},
+								{
+									name: "Right",
+									value: "right",
+								},
+								{
+									name: "Down",
+									value: "down",
+								},
+								{
+									name: "Bottom right",
+									value: "down_right",
+								},
+								{
+									name: "Bottom left",
+									value: "down_left",
+								},
+							],
+						},
+						{
+							name: "step_count",
+							description: "The amount of times to repeat this action",
+							type: 4,
+							required: false,
+						},
+					],
+				},
+			}),
+			getApp(guild.id).commands.post({
+				data: {
+					name: "attack",
+					description: "Attack someone, taking 1 HP if they are in range",
+					options: [
+						{
+							name: "victim",
+							description: "The person you want to kill",
+							type: 6,
+							required: true,
+						},
+					],
+				},
+			}),
+			getApp(guild.id).commands.post({
+				data: {
+					name: "create",
+					description: "Create a game with the specified members",
+					options: [
+						{
+							name: "ap_interval",
+							description:
+								"The amount of minutes it takes to give everyone 1 AP",
+							type: 4,
+							required: true,
+						},
+						...Array(20)
+							.fill(0)
+							.map((_, i) => {
+								return {
+									name: `player_${i + 1}`,
+									description: "A player to play in your match",
+									type: 6,
+									required: i < 3,
+								};
+							}),
+					],
+				},
+			}),
+			getApp(guild.id).commands.post({
+				data: {
+					name: "gift",
+					description: "Gift someone in your range a set amount of AP",
+					options: [
+						{
+							name: "receiver",
+							description: "The person you want to gift AP",
+							type: 6,
+							required: true,
+						},
+						{
+							name: "ap_count",
+							description: "The amount of AP you want to donate",
+							type: 4,
+							required: true,
+						},
+					],
+				},
+			}),
+		];
 
-		await getApp(guild.id).commands.post({
-			data: {
-				name: "pos",
-				description: "Get your in-game coordinates",
-			},
-		});
+		let promisesCompleted = 0;
+		for (let p of promises) {
+			p.then((d) => {
+				promisesCompleted++;
+				console.log(
+					`${guild.name}: ${promisesCompleted}/${promises.length} commands updated (just done: ${d.name})`
+				);
+			});
+		}
 
-		await getApp(guild.id).commands.post({
-			data: {
-				name: "range",
-				description: "Trade 2 AP for a range increase",
-			},
-		});
+		await Promise.all(promises);
 
-		await getApp(guild.id).commands.post({
-			data: {
-				name: "walk",
-				description: "Use 1 AP to walk in any of 8 direction",
-				options: [
-					{
-						name: "direction",
-						description: "The driection you want to walk in",
-						type: 3,
-						required: true,
-						choices: [
-							{
-								name: "Up",
-								value: "up",
-							},
-							{
-								name: "Upper left",
-								value: "up_left",
-							},
-							{
-								name: "Upper right",
-								value: "up_right",
-							},
-							{
-								name: "Left",
-								value: "left",
-							},
-							{
-								name: "Right",
-								value: "right",
-							},
-							{
-								name: "Down",
-								value: "down",
-							},
-							{
-								name: "Bottom right",
-								value: "down_right",
-							},
-							{
-								name: "Bottom left",
-								value: "down_left",
-							},
-						],
-					},
-					{
-						name: "step_count",
-						description: "The amount of times to repeat this action",
-						type: 4,
-						required: false,
-					},
-				],
-			},
-		});
-
-		await getApp(guild.id).commands.post({
-			data: {
-				name: "attack",
-				description: "Attack someone, taking 1 HP if they are in range",
-				options: [
-					{
-						name: "victim",
-						description: "The person you want to kill",
-						type: 6,
-						required: true,
-					},
-				],
-			},
-		});
-
-		await getApp(guild.id).commands.post({
-			data: {
-				name: "gift",
-				description: "Gift someone in your range a set amount of AP",
-				options: [
-					{
-						name: "receiver",
-						description: "The person you want to gift AP",
-						type: 6,
-						required: true,
-					},
-					{
-						name: "ap_count",
-						description: "The amount of AP you want to donate",
-						type: 4,
-						required: true,
-					},
-				],
-			},
-		});
+		console.log(`Updated commands for ${guild.name}`);
 	}
 }
 
 client.on("message", async (msg) => {
 	if (msg.author.bot) return;
 	let m = msg.content;
-	if (m.startsWith(`${prefix}create`)) {
-		const members = msg.mentions.users.toJSON();
+	// if (m.startsWith(`${prefix}create`)) {
+	// 	const members = msg.mentions.users.toJSON();
 
-		// @ts-ignore
-		const players: PlayerInfo[] = members.map((v) => {
-			return {
-				name: v.tag,
-				icon: v.avatarURL.replace(/webp/g, "png"),
-			};
-		});
+	// 	// @ts-ignore
+	// 	const players: PlayerInfo[] = members.map((v) => {
+	// 		return {
+	// 			name: v.tag,
+	// 			icon: v.avatarURL.replace(/webp/g, "png"),
+	// 		};
+	// 	});
 
-		if (players.length < 3) {
-			msg.reply("Op zn minst 3 spelers eh a neef niffo makker maatje");
-			return;
-		}
+	// 	if (players.length < 3) {
+	// 		msg.reply("Op zn minst 3 spelers eh a neef niffo makker maatje");
+	// 		return;
+	// 	}
 
-		const game = new TankTacticsGame({
-			playerInfo: players,
-			name: `${client.user.username.replace(/[^a-zA-Z]/g, "").toLowerCase()}-${
-				games.length + 1
-			}`,
-			guild: msg.guild.id,
-		});
+	// 	const game = new TankTacticsGame({
+	// 		playerInfo: players,
+	// 		name: `${client.user.username.replace(/[^a-zA-Z]/g, "").toLowerCase()}-${
+	// 			games.length + 1
+	// 		}`,
+	// 		guild: msg.guild.id,
+	// 	});
 
-		games.push(game);
+	// 	games.push(game);
 
-		db.set("games", games);
+	// 	db.set("games", games);
 
-		doGameListeners();
+	// 	doGameListeners();
 
-		msg.reply("okie dokie");
-		sendToDiscord(game);
-	}
+	// 	msg.reply("okie dokie");
+	// 	sendToDiscord(game);
+	// }
 
 	if (m.startsWith(`${prefix}board`)) {
 		// @ts-ignore

@@ -59,7 +59,7 @@ export class TankTacticsGame implements Game {
 	state: "ongoing" | "ended";
 
 	constructor(data) {
-		this.giftRoundInterval = 600e3;
+		this.giftRoundInterval = data.giftRoundInterval ?? 600e3;
 		this.eventListeners = [];
 
 		const playerList =
