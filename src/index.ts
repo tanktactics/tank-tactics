@@ -1,4 +1,4 @@
-import { PlayerInfo, TankTacticsGame } from "./TankTactics";
+import { GameEventType, PlayerInfo, TankTacticsGame } from "./TankTactics";
 import db from "./db";
 import * as Discord from "discord.js";
 import { config } from "dotenv";
@@ -50,25 +50,41 @@ function doGameListeners() {
 			db.set("games", games);
 		});
 
+		const saveScreenshot = async () => {
+			const gameCopy = new TankTacticsGame(JSON.parse(JSON.stringify(game))); // Brrrrrrrrrrrrrrrrr
+			const worthyLogs: GameEventType[] = [
+				"attack",
+				"gift",
+				"range_increase",
+				"walk",
+			];
+			const relevantLogs = gameCopy.log.filter((v) =>
+				worthyLogs.includes(v.type)
+			);
+			const i = relevantLogs.length.toString().padStart(5, "0");
+			console.log(`Saving screenshot ${i}`);
+
+			const canvas = await gameToCanvas(gameCopy);
+
+			if (!fs.existsSync(`game-imgs/`)) fs.mkdirSync(`game-imgs/`);
+
+			if (!fs.existsSync(`game-imgs/${gameCopy.name}/`))
+				fs.mkdirSync(`game-imgs/${gameCopy.name}/`);
+
+			const url = canvas.toDataURL();
+			const base64Data = url.replace(/^data:image\/png;base64,/, "");
+
+			fs.writeFileSync(
+				`game-imgs/${gameCopy.name}/${i}.png`,
+				base64Data,
+				"base64"
+			);
+		};
+
+		game.on("capture", saveScreenshot);
 		game.on("save", async (type) => {
 			db.set("games", games);
-			if (type === "log") {
-				const canvas = await gameToCanvas(game);
-
-				if (!fs.existsSync(`game-imgs/`)) fs.mkdirSync(`game-imgs/`);
-
-				if (!fs.existsSync(`game-imgs/${game.name}/`))
-					fs.mkdirSync(`game-imgs/${game.name}/`);
-
-				const url = canvas.toDataURL();
-				const base64Data = url.replace(/^data:image\/png;base64,/, "");
-
-				fs.writeFileSync(
-					`game-imgs/${game.name}/${game.log.length}.png`,
-					base64Data,
-					"base64"
-				);
-			}
+			if (type === "log") saveScreenshot();
 		});
 	}
 }
@@ -527,7 +543,7 @@ client.on("message", async (msg) => {
 });
 
 const gameToCanvas = async (game: TankTacticsGame) => {
-	const canvas = createCanvas(game.boardWidth * 10, game.boardHeight * 10);
+	const canvas = createCanvas(game.boardWidth * 20, game.boardHeight * 20);
 	const ctx = canvas.getContext("2d");
 
 	ctx.fillStyle = "#36393E";
@@ -614,11 +630,7 @@ async function getAllChannels() {
 }
 
 async function sendToDiscord(game: TankTacticsGame) {
-	console.time("canvas-make");
 	const gameCanvas = await gameToCanvas(game);
-	console.timeEnd("canvas-make");
-
-	console.time("find-channel");
 
 	const channels = await getAllChannels();
 	let gameChannel = channels.find((c) => c.name === game.name);
@@ -627,14 +639,11 @@ async function sendToDiscord(game: TankTacticsGame) {
 		gameChannel = await g.channels.create(game.name);
 	}
 	let channel = client.channels.cache.get(gameChannel.id);
-	console.timeEnd("find-channel");
 
-	console.time("parse-image");
 	// Convert to image and send it
 	const url = gameCanvas.toDataURL();
 	const sfbuff = Buffer.from(url.split(",")[1], "base64");
 	const sfattach = new Discord.MessageAttachment(sfbuff, "output.png");
-	console.timeEnd("parse-image");
 
 	let longestName = "";
 	for (let player of game.players) {
@@ -645,7 +654,6 @@ async function sendToDiscord(game: TankTacticsGame) {
 
 	const nextApRound = game.lastGiftRound + game.giftRoundInterval;
 
-	console.time("send-image");
 	// @ts-ignore
 	await channel.send(
 		`
@@ -675,7 +683,6 @@ async function sendToDiscord(game: TankTacticsGame) {
 			files: [sfattach],
 		}
 	);
-	console.timeEnd("send-image");
 }
 
 setInterval(() => {

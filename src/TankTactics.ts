@@ -46,7 +46,7 @@ export interface PlayerInfo {
 	icon: string;
 }
 
-type GameEventType =
+export type GameEventType =
 	| "attack"
 	| "walk"
 	| "gift"
@@ -54,7 +54,7 @@ type GameEventType =
 	| "point_give"
 	| "range_increase";
 
-interface GameEvent {
+export interface GameEvent {
 	type: GameEventType;
 	props: any;
 }
@@ -102,8 +102,8 @@ export class TankTacticsGame implements Game {
 		this.state = data.state ?? "ongoing";
 
 		// Set board details
-		this.boardWidth = data.boardWidth ?? playerList.length * 8;
-		this.boardHeight = data.boardHeight ?? playerList.length * 5;
+		this.boardWidth = data.boardWidth ?? playerList.length * 5;
+		this.boardHeight = data.boardHeight ?? playerList.length * 3;
 
 		// Spread players over the board
 		for (let player of playerList) {
@@ -148,13 +148,15 @@ export class TankTacticsGame implements Game {
 		let timeRemaining = Math.max(this.giftRoundInterval - diff, 0);
 
 		setTimeout(() => {
-			console.log("Giving points at", new Date().toLocaleString("nl"));
-			for (let p of this.players) {
-				this.givePlayerPoints(p.id, 1);
+			if (this.state === "ongoing") {
+				console.log("Giving points at", new Date().toLocaleString("nl"));
+				for (let p of this.players) {
+					this.givePlayerPoints(p.id, 1);
+				}
+				this.lastGiftRound = Date.now() + 1e3;
+				this.checkGiftRounds();
+				this.emit("points-given", Date.now());
 			}
-			this.lastGiftRound = Date.now();
-			this.checkGiftRounds();
-			this.emit("points-given", Date.now());
 		}, timeRemaining);
 	}
 
@@ -228,10 +230,7 @@ export class TankTacticsGame implements Game {
 			return "Je bent al dood man";
 		}
 
-		this.addLog("walk", {
-			dir,
-			player: p.id,
-		});
+		let pointsTaken = 0;
 
 		while (stepCount > 0) {
 			console.log(stepCount);
@@ -279,15 +278,24 @@ export class TankTacticsGame implements Game {
 
 				if (!newPosIsValid) return "Verder kan je niet jong";
 
+				this.addLog("walk", {
+					dir,
+					player: p.id,
+					newX,
+					newY,
+				});
+
 				p.coords.x = newX;
 				p.coords.y = newY;
 
 				this.takePlayerPoints(id, 1);
+				pointsTaken++;
+				this.emit("capture");
 			} else if (stepCount > 0) {
-				return `Na ${stepCount} stappen naar ${dir} heb je geen punten meer, dat is kut man`;
+				return `Na ${pointsTaken} stappen naar ${dir} heb je geen punten meer, dat is kut man`;
 			}
 		}
-		return "ok";
+		return pointsTaken > 0 ? "ok" : "nie genoeg punten";
 	}
 
 	doAttack(attackerId: number, victimId: number) {
@@ -320,6 +328,8 @@ export class TankTacticsGame implements Game {
 		if (Math.floor(dis) <= attacker.range) {
 			this.takePlayerPoints(attacker.id);
 			victim.health--;
+
+			this.emit("capture");
 
 			if (victim.health === 0) {
 				attacker.kills++;
@@ -429,6 +439,7 @@ export class TankTacticsGame implements Game {
 			props,
 		});
 		this.emit("save", "log");
+		this.emit("capture");
 	}
 
 	on(evtName: string, callback: any) {
@@ -438,7 +449,7 @@ export class TankTacticsGame implements Game {
 		});
 	}
 
-	emit(evtName: string, value: any) {
+	emit(evtName: string, value?: any) {
 		let relevantListeners = this.eventListeners.filter(
 			(v) => v.evtName === evtName
 		);
