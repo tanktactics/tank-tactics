@@ -334,8 +334,10 @@ export class TankTacticsGame implements Game {
 			if (victim.health === 0) {
 				attacker.kills++;
 
-				this.givePlayerPoints(attacker.id, victim.points);
-				this.takePlayerPoints(victim.id, victim.points);
+				// Subtract half points
+				const halfPoints = Math.floor(victim.points / 2);
+				this.givePlayerPoints(attacker.id, halfPoints);
+				this.takePlayerPoints(victim.id, halfPoints);
 
 				let stateCheck = this.doStateCheck();
 
