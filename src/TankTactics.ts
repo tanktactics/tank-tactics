@@ -347,7 +347,10 @@ export class TankTacticsGame implements Game {
 					victimHealth: victim.health,
 				});
 
-				if (stateCheck !== "ok") return "Je hebt m gekilled: " + stateCheck;
+				if (stateCheck !== "ok")
+					return (
+						`Je hebt m gekilled en hebt ${halfPoints} AP gepikt: ` + stateCheck
+					);
 
 				return "Goed bezig hij is dood";
 			}
