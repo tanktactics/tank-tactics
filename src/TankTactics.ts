@@ -149,9 +149,11 @@ export class TankTacticsGame implements Game {
 
 		setTimeout(() => {
 			if (this.state === "ongoing") {
-				console.log("Giving points at", new Date().toLocaleString("nl"));
+				console.log(
+					`Giving points at ${new Date().toLocaleString("nl")} for ${this.name}`
+				);
 				for (let p of this.players) {
-					this.givePlayerPoints(p.id, 1);
+					if (p.health > 0 || p.points < 1) this.givePlayerPoints(p.id, 1);
 				}
 				this.lastGiftRound = Date.now() + 1e3;
 				this.checkGiftRounds();
@@ -352,7 +354,7 @@ export class TankTacticsGame implements Game {
 						`Je hebt m gekilled en hebt ${halfPoints} AP gepikt: ` + stateCheck
 					);
 
-				return "Goed bezig hij is dood";
+				return `Goed bezig, die is dood en je hebt ${halfPoints} AP gepikt`;
 			}
 		} else {
 			return "Die is veeeeeeeeel te ver weg";
