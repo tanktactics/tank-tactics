@@ -608,11 +608,9 @@ const gameToCanvas = async (game: TankTacticsGame) => {
 					let gradient = ctx.createLinearGradient(0, 0, cellWidth, cellHeight);
 					for (let i = 0; i < relevantPlayers.length; i++) {
 						let o = 1 / relevantPlayers.length;
-						gradient.addColorStop(o * i, colors[relevantPlayers[i].id]);
-						gradient.addColorStop(
-							o * (i + 1) - 0.05,
-							colors[relevantPlayers[i].id]
-						);
+						const color = colors[relevantPlayers[i].id % colors.length];
+						gradient.addColorStop(o * i, color);
+						gradient.addColorStop(o * (i + 1) - 0.05, color);
 					}
 					ctx.fillStyle = gradient;
 
