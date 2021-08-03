@@ -30,7 +30,7 @@ export let games: TankTacticsGame[] = [];
 client.on("ready", async () => {
   await setupCommands();
   console.log("Bot ready!");
-	games = (db.get("games") as GameData[]).filter((g) => g.state === "ongoing").map((g) => new TankTacticsGame(g));
+	games = (db.get("games") as GameData[]).map((g) => new TankTacticsGame(g));
 });
 
 client.on("interactionCreate", async (interaction) => {
