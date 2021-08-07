@@ -47,7 +47,7 @@ client.on('interactionCreate', async (interaction) => {
                 .filter((option) => option.name.startsWith('player'))
                 .map((option) => option.member!)
                 .map((member) => member as Discord.GuildMember);
-            const apCountInterval = interaction.options.getInteger('ap_interval', true) * 60e3;
+            const apCountInterval = Math.max(interaction.options.getInteger('ap_interval', true) * 60e3, 30e3);
             if (members.length >= 3) {
                 const channel = await interaction.guild.channels.create(
                     `${slugify(client.user.username.toLowerCase())}-${games.length + 1}`,
