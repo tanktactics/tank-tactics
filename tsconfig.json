@@ -6,6 +6,8 @@
     "target": "esnext",
     "module": "commonjs",
     "moduleResolution": "node",
+    "esModuleInterop": true,
+    "sourceMap": true,
 	},
-  "exclude": ["src/index_old.ts"]
+  "include": ["src"],
 }

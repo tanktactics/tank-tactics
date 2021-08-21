@@ -6,19 +6,24 @@
   "scripts": {
     "start": "yarn build && node ./dist/index.js",
     "start-alt": "ts-node src/",
-    "build": "etsc"
+    "build": "etsc",
+    "prisma:generate": "prisma generate --schema src/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema src/prisma/schema.prisma"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@discordjs/builders": "^0.3.0",
+    "@discordjs/builders": "^0.4.0",
     "@discordjs/rest": "^0.1.0-canary.0",
+    "@prisma/client": "^2.28.0",
     "canvas": "^2.8.0",
-    "discord.js": "dev",
+    "discord.js": "^13.0.0",
     "dotenv": "^10.0.0",
     "jipdb": "^1.0.5",
-    "node-ts": "^5.1.1",
+    "kleur": "^4.1.4",
+    "readdirp": "^3.6.0",
+    "table": "^6.7.1",
     "timers": "^0.1.1",
     "transliteration": "^2.2.0",
     "ts-node": "^10.1.0",
@@ -30,6 +35,7 @@
   },
   "devDependencies": {
     "@types/node": "^16.4.10",
+    "@types/table": "^6.3.2",
     "@typescript-eslint/eslint-plugin": "^4.29.0",
     "@typescript-eslint/parser": "^4.29.0",
     "eslint": "^7.32.0",
@@ -37,6 +43,7 @@
     "eslint-plugin-prettier": "^3.4.0",
     "nodemon": "^2.0.12",
     "prettier": "^2.3.2",
+    "prisma": "^2.28.0",
     "typescript": "^4.3.5"
   }
 }
