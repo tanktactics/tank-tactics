@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  type      String
+  props     String // Prisma doesn't support SQLite Json yet - https://github.com/prisma/prisma/issues/3786
+  game      Game?    @relation(fields: [gameId], references: [id])
+  gameId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Game {
+  id           String   @id @default(uuid())
+  name         String
+  players      Player[]
+  boardWidth   Int
+  boardHeight  Int
+  guildId      String
+  channelId    String
+  giftInterval Int
+  state        String
+  logs         Log[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Player {
+  id        String      @id @default(uuid())
+  game      Game?       @relation(fields: [gameId], references: [id])
+  gameId    String?
+  userId    String
+  icon      String
+  name      String
+  points    Int
+  range     Int
+  lives     Int
+  kills     Int
+  coords    Coordinates @relation(fields: [coordsId], references: [id])
+  coordsId  String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Coordinates {
+  id        String   @id @default(uuid())
+  x         Int
+  y         Int
+  player    Player?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

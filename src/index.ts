@@ -1,26 +1,19 @@
-import * as Discord from 'discord.js';
 import { config } from 'dotenv';
-import db from './db';
-import {
-  attackCommand,
-  boardCommand,
-  createCommand,
-  giftCommand,
-  posCommand,
-  rangeCommand,
-  walkCommand,
-} from './commands';
-import { TankTacticsGame } from './TankTactics';
+import { red } from 'kleur/colors'
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
-import { saveScreenshot } from './screenshotLogic';
-import { gameToCanvas } from './canvasCreation';
-import { slugify } from 'transliteration';
-import { Direction, GameData } from './types';
-import { gameProps } from './utils';
+import { Command, SlashCommand } from './types';
+import readdirp from 'readdirp';
+import { basename, join } from 'path';
+import { transformInteraction } from './utils';
+import { prisma } from './prisma';
+import { TankTacticsGame } from './TankTactics';
+import { setupGame } from './setupGame';
+import { table } from 'table';
+import { Client, Formatters, Guild, TextChannel } from 'discord.js';
 
 config();
-export const client = new Discord.Client({
+export const client = new Client({
   partials: ['MESSAGE', 'REACTION'],
   intents: ['GUILD_MESSAGES'],
 });
@@ -31,194 +24,134 @@ process.on('uncaughtException', (err) => {
   console.log('Caught exception', err);
 });
 
-export let games: TankTacticsGame[] = [];
+const commands = new Map<string, Command>();
+export const games = new Map<string, TankTacticsGame>();
+const commandsToRegister: SlashCommand[] = [];
+
+(async () => {
+  const commandFiles = readdirp(join(__dirname, 'commands'), {
+    fileFilter: '*.js'
+  });
+
+  for await (const dir of commandFiles) {
+    const command: {
+      commandData?: SlashCommand,
+      executeCommand?: Command
+    } = await import(dir.fullPath);
+    if (command.commandData !== undefined && typeof command.executeCommand == 'function') {
+      commandsToRegister.push(command.commandData);
+      commands.set(command.commandData!.name, command.executeCommand);
+      console.log(`Registered command ${command.commandData!.name}`);
+    } else console.log(red(`${command.commandData?.name ?? basename(dir.fullPath, '.js')} is missing data to register the command!`));
+  }
+
+})();
 
 client.on('ready', async () => {
-  await setupCommands();
   console.log('Bot ready!');
-  games = (db.get('games') as GameData[]).map((g) => new TankTacticsGame(g));
+  for await (const [, guild] of client.guilds.cache) {
+    await setupCommands(guild);
+  }
+  const onGoingGames = await prisma.game.findMany({
+    where: {
+      state: 'ongoing'
+    },
+    include: {
+      players: {
+        include: {
+          coords: true
+        }
+      },
+      logs: true
+    }
+  });
+  for await (const game of onGoingGames) {
+    const channel = await client.channels.fetch(game.channelId) as TextChannel;
+    await setupGame(game, client, channel);
+  }
+});
+
+client.on('guildCreate', async (guild) => {
+  if (!guild.available) return;
+  await setupCommands(guild);
 });
 
 client.on('interactionCreate', async (interaction) => {
   if (interaction.isCommand()) {
-    await interaction.defer();
-    if (interaction.commandName === 'create') {
-      const members = interaction.options.data
-        .filter((option) => option.name.startsWith('player'))
-        .map((option) => option.member!)
-        .map((member) => member as Discord.GuildMember)
-        .filter((member, pos, array) => array.indexOf(member) === pos)
-        .filter((member) => !member.user.bot);
-      const apCountInterval = Math.max(interaction.options.getInteger('ap_interval', true) * 60e3, 30e3);
-      if (members.length >= 3) {
-        const channel = await interaction.guild.channels.create(
-          `${slugify(client.user.username.toLowerCase())}-${games.length + 1}`,
-          {
-            type: 'GUILD_TEXT',
-            reason: `New TankTactics game created by ${interaction.user.tag}`,
-          },
-        );
-        const game = new TankTacticsGame({
-          playerInfo: members.map((member) => {
-            return {
-              name: member.user.tag,
-              icon: member.user.displayAvatarURL({
-                format: 'png',
-                size: 32,
-              }),
-              userId: member.user.id,
-            };
-          }),
-          giftRoundInterval: apCountInterval ?? 600e3,
-          name: channel.name,
-          guild: interaction.guildId,
-          channelId: channel.id,
-        });
-        games.push(game);
-
-        db.set(
-          'games',
-          games.map((g) => g.toJSON()),
-        );
-
-        interaction.editReply(`Game aangemaakt in ${channel}!`);
-      } else {
-        interaction.editReply('Je hebt op zn minst 3 spelers nodig om een spel te starten!');
+    const command = commands.get(interaction.commandName);
+    if (command !== undefined) {
+      const dbGame = await prisma.game.findFirst({
+        where: {
+          guildId: interaction.guildId,
+          channelId: interaction.channelId,
+          state: 'ongoing'
+        },
+        select: {
+          id: true
+        }
+      });
+      const game = games.get(dbGame?.id ?? null);
+      const player = game?.players.getPlayerFromDiscordUser(interaction.user);
+      await command({
+        args: transformInteraction(interaction.options.data),
+        interaction,
+        client,
+        game,
+        player
+      });
+    }
+  } else if (interaction.isButton()) {
+    const dbGame = await prisma.game.findFirst({
+      where: {
+        guildId: interaction.guildId,
+        channelId: interaction.channelId,
+      },
+      select: {
+        id: true
       }
-    } else {
-      const game = games.find((game) => game.channelId == interaction.channelId);
-      if (!game) {
-        interaction.editReply('Wut?! Dit command moet in een game kanaal uitgevoerd worden!');
-        return;
-      }
-      const player = game.players.find((player) => player.userId == interaction.user.id);
-      if (!player) {
-        interaction.editReply('Je bent niet eens een speler?!');
-        return;
-      }
-      if (interaction.commandName === 'walk') {
-        const direction = interaction.options.getString('direction', true) as Direction;
-        const stepCount = interaction.options.getInteger('step_count') ?? 1;
+    });
+    const game = games.get(dbGame?.id ?? null);
+    if (interaction.customId === 'view-ap') {
+      const tableString = table(
+        game.players
+          .sort((a, b) => b.points - a.points)
+          .sort((a, b) => b.lives - a.lives)
+          .map((p) => [p.name, `${p.points} AP`, `${p.lives} lives`, `${p.range} range`, `${p.kills} kills`]),
+        {
+          border: {
+            topBody: `─`,
+            topJoin: `┬`,
+            topLeft: `┌`,
+            topRight: `┐`,
 
-        const walkRes = game.walkPlayer(player.id, direction, stepCount);
+            bottomBody: `─`,
+            bottomJoin: `┴`,
+            bottomLeft: `└`,
+            bottomRight: `┘`,
 
-        if (walkRes !== 'ok') {
-          await interaction.editReply({
-            content: walkRes,
-            ...(await gameProps(game)),
-          });
-        } else {
-          await interaction.editReply({
-            content: `Veel plezier daar, ${stepCount} naar ${direction}`,
-            ...(await gameProps(game)),
-          });
-        }
-      } else if (interaction.commandName === 'board') {
-        await interaction.editReply({
-          content: 'Hierzo!!',
-          ...(await gameProps(game)),
-        });
-      } else if (interaction.commandName === 'attack') {
-        const victim = interaction.options.getUser('victim', true);
-        if (victim === interaction.user) {
-          interaction.editReply('Dat ben jij zelf. Hulp is beschikbaar. 0800-0113');
-          return;
-        }
-        const victimPlayer = game.players.find((p) => p.userId === victim.id);
-        if (!victimPlayer) {
-          interaction.editReply('Die guy speelt niet eens mee...');
-          return;
-        }
+            bodyLeft: `│`,
+            bodyRight: `│`,
+            bodyJoin: `│`,
 
-        const attackRes = game.doAttack(player.id, victimPlayer.id);
-        if (attackRes !== 'ok') {
-          await interaction.editReply({
-            content: attackRes,
-            ...(await gameProps(game)),
-          });
-        } else {
-          await interaction.editReply({
-            content: `${victim} aanvallen? Broer, jij bent echt gangster...`,
-            ...(await gameProps(game)),
-            allowedMentions: {
-              users: [victim.id],
-            },
-          });
-        }
-        await game.doStateCheck();
-      } else if (interaction.commandName === 'gift') {
-        const receiver = interaction.options.getUser('receiver', true);
-        const apCount = interaction.options.getInteger('ap_count') ?? 0;
-
-        if (receiver === interaction.user) {
-          interaction.editReply('Dat ben jij zelf. Hoezo wil je jezelf AP geven?');
-          return;
-        }
-
-        const receiverPlayer = game.players.find((p) => p.userId === receiver.id);
-        if (!receiverPlayer) {
-          interaction.editReply('Die guy speelt niet eens mee...');
-          return;
-        }
-
-        const giftRes = game.doGift(player.id, receiverPlayer.id, apCount);
-
-        if (giftRes !== 'ok') {
-          await interaction.editReply({
-            content: giftRes,
-            ...(await gameProps(game)),
-          });
-        } else {
-          await interaction.editReply({
-            content: `Dat is lief van je, om die arme ${receiver} lekker ${apCount} van je mooie AP te geven <3`,
-            ...(await gameProps(game)),
-            allowedMentions: {
-              users: [receiver.id],
-            },
-          });
-        }
-      } else if (interaction.commandName === 'pos') {
-        if (player.health <= 0) interaction.editReply(`Je positie? Broer je bent dood 😂`);
-        else interaction.editReply(`Your position: X ${player.coords.x}, Y ${player.coords.y}`);
-      } else if (interaction.commandName === 'range') {
-        const rangeRes = game.doRangeIncrease(player.id);
-        if (rangeRes !== 'ok') {
-          await interaction.editReply({
-            content: rangeRes,
-            ...(await gameProps(game)),
-          });
-        } else {
-          await interaction.editReply({
-            content: 'Zo zo, geniet maar van die extra range 😎',
-            ...(await gameProps(game)),
-          });
-        }
-      }
+            joinBody: `─`,
+            joinLeft: `├`,
+            joinRight: `┤`,
+            joinJoin: `┼`
+          }
+        })
+      interaction.reply({
+        content: Formatters.codeBlock(tableString),
+        ephemeral: true
+      });
     }
   }
 });
 
 client.login(process.env.token);
 
-async function setupCommands() {
-  const guilds = await Promise.all(client.guilds.cache.map(async (g) => await g.fetch()));
-  for await (const guild of guilds) {
-    await rest.put(Routes.applicationGuildCommands(client.user.id, guild.id), {
-      body: [
-        boardCommand.toJSON(),
-        posCommand.toJSON(),
-        rangeCommand.toJSON(),
-        walkCommand.toJSON(),
-        attackCommand.toJSON(),
-        createCommand.toJSON(),
-        giftCommand.toJSON(),
-      ],
-    });
-    console.log(`Commands setupped for ${guild.name}`);
-  }
+async function setupCommands(guild: Guild) {
+  await rest.put(Routes.applicationGuildCommands(client.user.id, guild.id), {
+    body: commandsToRegister,
+  });
+  console.log(`Commands setupped for ${guild.name ?? guild.id}`);
 }
-
-setInterval(() => {
-  console.log('Forcefully storing db');
-  db.store(false);
-}, 60e3 * 2);
