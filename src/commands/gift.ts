@@ -30,6 +30,8 @@ export const executeCommand: Command<typeof commandData> = async ({ interaction,
   if (!receiver) return interaction.editReply('This user isn\'t part of this game.');
   if (receiver.lives === 0) return interaction.editReply('This user is already dead!');
   if (player.points <= 0) return interaction.editReply('You don\'t have any points to give away!');
+  if (args.ap_count > player.points) return interaction.editReply('You don\'t have enough points!');
+  if (args.ap_count < 0) return interaction.editReply('You can\'t give negative points!');
   if (player.lives <= 0) {
     await player.gift(receiver, args.ap_count);
     await interaction.editReply(`You gifted ${args.ap_count} AP to ${args.receiver.user}!`);
