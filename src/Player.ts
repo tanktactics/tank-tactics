@@ -220,15 +220,7 @@ export class Player implements IPlayer {
         })
       }
     });
-    await prisma.player.update({
-      data: {
-        points: {
-          decrement: points
-        }
-      },
-      where: { id: this.id }
-    });
-    this.points--;
+    await this.removePoints(points);
     await receiver.addPoints(points);
   }
 
