@@ -11,7 +11,7 @@ export const commandData = {
 export const executeCommand: Command = async ({ interaction, game, player }) => {
   await interaction.deferReply();
   const check = gameCheck({ game, player });
-  if (check) return interaction.reply(check);
+  if (check) return interaction.editReply(check);
   if (player.lives <= 0) return interaction.editReply('You are already dead!');
   if (player.points <= 0) return interaction.editReply('You don\'t have any points to use!');
   if (player.points < 2) return interaction.editReply('You need at least 2 points to use this command!');
