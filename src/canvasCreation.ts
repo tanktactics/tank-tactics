@@ -1,4 +1,5 @@
 import { createCanvas, loadImage, Image } from 'canvas';
+import { client } from '.';
 import { TankTacticsGame } from './TankTactics';
 
 export async function gameToCanvas(game: TankTacticsGame) {
@@ -13,7 +14,13 @@ export async function gameToCanvas(game: TankTacticsGame) {
   const cellHeight = Math.floor(canvas.width / game.boardWidth);
 
   for await (const [, player] of game.players) {
-    if (!playerImages[player.id]) playerImages[player.id] = await loadImage(player.icon);
+    if (!playerImages[player.id]) {
+      const discordUser = await client.users.fetch(player.userId);
+      playerImages[player.id] = await loadImage(discordUser.displayAvatarURL({
+        format: 'png',
+        size: 32,
+      }));
+    }
   }
 
   const colors = [

@@ -53,7 +53,6 @@ export const executeCommand: Command<typeof commandData> = async ({ interaction,
         players: {
           create: [...game.players.map((player) => ({
             userId: player.userId,
-            icon: player.icon,
             name: player.name,
             points: 1,
             range: 2,

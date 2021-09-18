@@ -9,7 +9,6 @@ export class Player implements IPlayer {
   lives: number;
   kills: number;
   coords: ICoords;
-  icon: string;
   name: string;
   userId: string;
   constructor(protected game: ITankTacticsGame, data: PlayerWithCoords) {
@@ -19,7 +18,6 @@ export class Player implements IPlayer {
     this.lives = data.lives;
     this.kills = data.kills;
     this.coords = data.coords;
-    this.icon = data.icon;
     this.name = data.name;
     this.userId = data.userId;
     if (this.coords.x === -1) this.coords.x = Math.floor(Math.random() * this.game.boardWidth);

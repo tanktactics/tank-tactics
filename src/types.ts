@@ -32,7 +32,6 @@ export interface IPlayer {
   lives: number;
   kills: number;
   coords: ICoords;
-  icon: string;
   name: string;
   userId: string;
 
