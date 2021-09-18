@@ -57,10 +57,6 @@ export const executeCommand: Command<typeof commandData> = async ({ interaction,
         players: {
           create: [...members.map((player) => ({
             userId: player.user.id,
-            icon: player.user.displayAvatarURL({
-              format: 'png',
-              size: 32,
-            }),
             name: player.user.tag,
             points: 1,
             range: 2,

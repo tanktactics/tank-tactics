@@ -40,7 +40,6 @@ model Player {
   game      Game?       @relation(fields: [gameId], references: [id])
   gameId    String?
   userId    String
-  icon      String
   name      String
   points    Int
   range     Int
